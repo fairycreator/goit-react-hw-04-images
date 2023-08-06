@@ -15,15 +15,11 @@ import '../Styles/styles.css';
 const Button = ({ onLoadMore }) => {
   return (
     <div>
-      <Button type="button" className="Button" onClick={onLoadMore}>
+      <button type="button" className="Button" onClick={onLoadMore}>
         Load more
-      </Button>
+      </button>
     </div>
   );
 };
-
-// Button.propTypes = {
-//   onClick: PropTypes.func.isRequired,
-// };
 
 export default Button;
