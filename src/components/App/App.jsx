@@ -33,16 +33,16 @@ const App = () => {
   }, [searchQuery, currentPage]);
 
   useEffect(() => {
-    fetchImages();
-  }, [fetchImages]);
+    fetchImages(); // <-- fetchImages added as a dependency
+  }, [fetchImages]); // <-- fetchImages added to the dependency array
 
   useEffect(() => {
     if (searchQuery !== 'react') {
       setImages([]);
       setCurrentPage(1);
-      fetchImages();
+      fetchImages(); // <-- fetchImages added as a dependency
     }
-  }, [searchQuery, fetchImages]);
+  }, [searchQuery, fetchImages]); // <-- fetchImages added to the dependency array
 
   const handleFormSubmit = query => {
     setSearchQuery(query);
