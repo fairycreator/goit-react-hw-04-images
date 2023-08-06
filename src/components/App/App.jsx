@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Searchbar from '../Searchbar/Searchbar';
 import ImageGallery from '../ImageGallery/ImageGallery';
 import Button from '../Button/Button';
@@ -7,76 +7,71 @@ import Modal from '../Modal/Modal';
 import api from '../Api/Api';
 import '../Styles/styles.css';
 
-class App extends Component {
-  state = {
-    images: [],
-    isLoading: false,
-    isError: false,
-    error: null,
-    showModal: false,
-    modalImageURL: '',
-    searchQuery: 'react',
-    currentPage: 1,
-  };
+const App = () => {
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [modalImageURL, setModalImageURL] = useState('');
+  const [searchQuery, setSearchQuery] = useState('react');
+  const [currentPage, setCurrentPage] = useState(1);
 
-  componentDidMount() {
-    this.fetchImages();
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevState.searchQuery !== this.state.searchQuery) {
-      this.setState({ images: [], currentPage: 1 }, this.fetchImages);
-    }
-  }
-
-  fetchImages = async () => {
-    const { searchQuery, currentPage } = this.state;
-    this.setState({ isLoading: true });
+  const fetchImages = useCallback(async () => {
+    setIsLoading(true);
 
     try {
-      const images = await api.fetchImages(searchQuery, currentPage);
-      this.setState(prevState => ({
-        images: [...prevState.images, ...images],
-        currentPage: prevState.currentPage + 1,
-        isLoading: false,
-      }));
+      const fetchedImages = await api.fetchImages(searchQuery, currentPage);
+      setImages(prevImages => [...prevImages, ...fetchedImages]);
+      setCurrentPage(prevPage => prevPage + 1);
+      setIsLoading(false);
     } catch (error) {
-      this.setState({ isError: true, error, isLoading: false });
-    } finally {
-      this.setState({ isLoading: false });
+      setIsError(true);
+      setError(error);
+      setIsLoading(false);
     }
+  }, [searchQuery, currentPage]);
+
+  useEffect(() => {
+    fetchImages();
+  }, [fetchImages]);
+
+  useEffect(() => {
+    if (searchQuery !== 'react') {
+      setImages([]);
+      setCurrentPage(1);
+      fetchImages();
+    }
+  }, [searchQuery, fetchImages]);
+
+  const handleFormSubmit = query => {
+    setSearchQuery(query);
   };
 
-  handleFormSubmit = query => {
-    this.setState({ searchQuery: query });
+  const handleImageClick = largeImageURL => {
+    setShowModal(true);
+    setModalImageURL(largeImageURL);
   };
 
-  handleImageClick = largeImageURL => {
-    this.setState({ showModal: true, modalImageURL: largeImageURL });
+  const closeModal = () => {
+    setShowModal(false);
+    setModalImageURL('');
   };
 
-  closeModal = () => {
-    this.setState({ showModal: false, modalImageURL: '' });
-  };
-
-  render() {
-    const { images, isLoading, isError, showModal, modalImageURL } = this.state;
-
-    return (
-      <div>
-        <Searchbar onSubmit={this.handleFormSubmit} />
-        {isError && <div>Error: {this.state.error.message}</div>}
-        <ImageGallery images={images} onClick={this.handleImageClick} />
-        {isLoading && <Loader />}
-        {showModal && (
-          <Modal largeImageURL={modalImageURL} onClose={this.closeModal} />
-        )}
-        {images.length > 0 && !isLoading && !isError && (
-          <Button onLoadMore={this.fetchImages} show={true} />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div>
+      <Searchbar onSubmit={handleFormSubmit} />
+      {isError && <div>Error: {error.message}</div>}
+      <ImageGallery images={images} onClick={handleImageClick} />
+      {isLoading && <Loader />}
+      {showModal && (
+        <Modal largeImageURL={modalImageURL} onClose={closeModal} />
+      )}
+      {images.length > 0 && !isLoading && !isError && (
+        <Button onLoadMore={fetchImages} show={true} />
+      )}
+    </div>
+  );
+};
 
 export default App;
