@@ -18,33 +18,40 @@ const App = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    const fetchAndSetImages = async () => {
-      setIsLoading(true);
+    async function addImages() {
+      if (searchQuery === '') {
+        return;
+      }
 
+      setIsLoading(true);
       try {
-        const fetchedImages = await api.fetchImages(searchQuery, currentPage);
-        setImages(prevImages => [...prevImages, ...fetchedImages]);
-        setCurrentPage(prevPage => prevPage + 1);
+        const data = await api.fetchImages(searchQuery, currentPage);
+
+        if (data.length === 0) {
+          setIsError(true);
+          setError(new Error('No images found'));
+        } else {
+          setIsError(false);
+          setError(null);
+          const fetchedImages = data.map(item => ({
+            webformatURL: item.webformatURL,
+            largeImageURL: item.largeImageURL,
+          }));
+          setImages(prevImages => [...prevImages, ...fetchedImages]);
+        }
       } catch (error) {
         setIsError(true);
         setError(error);
       } finally {
         setIsLoading(false);
       }
-    };
-
-    if (searchQuery !== 'react') {
-      setImages([]);
-      setCurrentPage(1);
-      fetchAndSetImages();
     }
+    addImages();
   }, [searchQuery, currentPage]);
 
   useEffect(() => {
-    if (searchQuery !== 'react') {
-      setImages([]);
-      setCurrentPage(1);
-    }
+    setImages([]);
+    setCurrentPage(1);
   }, [searchQuery]);
 
   const handleFormSubmit = query => {
@@ -71,10 +78,7 @@ const App = () => {
         <Modal largeImageURL={modalImageURL} onClose={closeModal} />
       )}
       {images.length > 0 && (
-        <Button
-          onLoadMore={() => setCurrentPage(prevPage => prevPage + 1)}
-          show={true}
-        />
+        <Button onLoadMore={() => setCurrentPage(prevPage => prevPage + 1)} />
       )}
     </div>
   );
