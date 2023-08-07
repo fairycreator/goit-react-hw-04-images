@@ -77,7 +77,7 @@ const App = () => {
       {showModal && (
         <Modal largeImageURL={modalImageURL} onClose={closeModal} />
       )}
-      {images.length > 0 && (
+      {images.length > 0 && !isLoading && !isError && (
         <Button onLoadMore={() => setCurrentPage(prevPage => prevPage + 1)} />
       )}
     </div>
