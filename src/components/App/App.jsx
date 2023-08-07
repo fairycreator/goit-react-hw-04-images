@@ -5,43 +5,51 @@ import Button from '../Button/Button';
 import Loader from '../Loader/Loader';
 import Modal from '../Modal/Modal';
 import api from '../Api/Api';
+import '../Styles/styles.css';
 
 const App = () => {
-  const [searchName, setSearchName] = useState('');
   const [images, setImages] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalImageURL, setModalImageURL] = useState('');
+  const [searchQuery, setSearchQuery] = useState('react');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    if (searchName === '') {
-      return;
-    }
+    const fetchAndSetImages = async () => {
+      setIsLoading(true);
 
-    async function addImages() {
       try {
-        setIsLoading(true);
-        const data = await api.fetchImages(searchName, currentPage);
-
-        if (data.length === 0) {
-          console.log('Sorry, image not found...');
-        } else {
-          const fetchedImages = data.map(item => ({
-            webformatURL: item.webformatURL,
-            largeImageURL: item.largeImageURL,
-          }));
-
-          setImages(prevImages => [...prevImages, ...fetchedImages]);
-        }
+        const fetchedImages = await api.fetchImages(searchQuery, currentPage);
+        setImages(prevImages => [...prevImages, ...fetchedImages]);
+        setCurrentPage(prevPage => prevPage + 1);
       } catch (error) {
-        console.log('Something went wrong:', error.message);
+        setIsError(true);
+        setError(error);
       } finally {
         setIsLoading(false);
       }
+    };
+
+    if (searchQuery !== 'react') {
+      setImages([]);
+      setCurrentPage(1);
+      fetchAndSetImages();
     }
-    addImages();
-  }, [searchName, currentPage]);
+  }, [searchQuery, currentPage]);
+
+  useEffect(() => {
+    if (searchQuery !== 'react') {
+      setImages([]);
+      setCurrentPage(1);
+    }
+  }, [searchQuery]);
+
+  const handleFormSubmit = query => {
+    setSearchQuery(query);
+  };
 
   const handleImageClick = largeImageURL => {
     setShowModal(true);
@@ -53,22 +61,20 @@ const App = () => {
     setModalImageURL('');
   };
 
-  const handleSubmit = query => {
-    setSearchName(query);
-    setImages([]);
-    setCurrentPage(1);
-  };
-
   return (
     <div>
-      <Searchbar onSubmit={handleSubmit} />
+      <Searchbar onSubmit={handleFormSubmit} />
+      {isError && <div>Error: {error.message}</div>}
       <ImageGallery images={images} onClick={handleImageClick} />
       {isLoading && <Loader />}
       {showModal && (
         <Modal largeImageURL={modalImageURL} onClose={closeModal} />
       )}
       {images.length > 0 && (
-        <Button onLoadMore={() => setCurrentPage(prevPage => prevPage + 1)} />
+        <Button
+          onLoadMore={() => setCurrentPage(prevPage => prevPage + 1)}
+          show={true}
+        />
       )}
     </div>
   );
